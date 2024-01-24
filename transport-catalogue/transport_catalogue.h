@@ -14,32 +14,38 @@
 
 namespace transport_catalogue {
 
+	struct Stop {
+		std::string name;
+		geo::Coordinates coordinates;
+	};
+
+	struct Bus {
+		std::string route_name;
+		std::vector<Stop*> route;
+		double route_length;
+	};
+
+	struct BusInfo {
+		int stops_count;
+		int unique_stops_count;
+		double route_length;
+	};
+
 	class TransportCatalogue {
 
 	public:
 
-		struct Stop {
-			std::string name;
-			geo::Coordinates coordinates;
-		};
+		void AddStop(const std::string_view stop_name, geo::Coordinates coordinates);
 
-		struct Bus {
-			std::string route_name;
-			std::vector<Stop*> route;
-			double route_length;
-		};
-
-		void AddStop(const std::string& stop_name, geo::Coordinates coordinates);
-
-		std::optional<Stop*> FindStop(std::string_view stop_name) const;
+		const Stop* FindStop(std::string_view stop_name) const;
 
 		std::optional<std::vector<std::string_view>> GetStopInfo(std::string_view requested_stop) const;
 
-		void AddBus(const std::string& id, std::vector<std::string_view>& stops);
+		void AddBus(const std::string_view id, const std::vector<std::string_view>& stops);
 
-		std::optional<Bus*> FindBus(std::string_view route_name) const;
+		const Bus* FindBus(std::string_view route_name) const;
 
-		std::tuple<int, int, double> GetBusInfo(std::string_view requested_bus) const;
+		std::optional<BusInfo> GetBusInfo(std::string_view requested_bus) const;
 
 	private:
 		std::deque<Stop> all_stops_;

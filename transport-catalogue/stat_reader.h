@@ -12,11 +12,5 @@ namespace transport_catalogue {
         void ParseAndPrintStat(transport_catalogue::TransportCatalogue& transport_catalogue, std::string_view request,
             std::ostream& output);
 
-        namespace details {
-            std::string ParseRequest(std::string_view line);
-            void PrintBusInfo(transport_catalogue::TransportCatalogue& transport_catalogue, std::string_view requested_bus, std::ostream& output);
-            void PrintStopInfo(transport_catalogue::TransportCatalogue& transport_catalogue, std::string_view requested_stop, std::ostream& output);
-        }
-
     }
 }

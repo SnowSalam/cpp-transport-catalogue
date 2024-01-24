@@ -108,7 +108,7 @@ namespace transport_catalogue {
             }
         }
 
-        void InputReader::ApplyCommands([[maybe_unused]] transport_catalogue::TransportCatalogue& catalogue) {
+        void InputReader::ApplyCommands(transport_catalogue::TransportCatalogue& catalogue) {
             std::sort(commands_.begin(), commands_.end(), [](CommandDescription& lhs, CommandDescription& rhs) {
                 return lhs.command[0] > rhs.command[0];
                 });
