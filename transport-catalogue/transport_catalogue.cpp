@@ -39,11 +39,7 @@ namespace transport_catalogue {
 				route_stops.push_back(stops_catalogue_[stop]);
 			}
 		}
-		double route_length = 0.0;
-		for (int i = 1, size = route_stops.size(); i < size; ++i) {
-			route_length += geo::ComputeDistance(route_stops[i - 1]->coordinates, route_stops[i]->coordinates);
-		}
-		all_buses_.push_back({ std::string(id), route_stops, route_length });
+		all_buses_.push_back({ std::string(id), route_stops });
 		buses_catalogue_[all_buses_.back().route_name] = &all_buses_.back();
 		for (const std::string_view& stop : stops) {
 			stops_to_buses_[stop].insert(all_buses_.back().route_name);
@@ -59,7 +55,23 @@ namespace transport_catalogue {
 
 	std::optional<BusInfo> TransportCatalogue::GetBusInfo(std::string_view requested_bus) const {
 		if (const Bus* bus = FindBus(requested_bus); bus != nullptr) {
-			BusInfo bus_info(bus->route.size(), CountUniqueStops(requested_bus), bus->route_length);
+
+			double geo_route_length = 0.0;
+			int road_route_distance = 0;
+			for (int i = 1, size = bus->route.size(); i < size; ++i) {
+				geo_route_length += geo::ComputeDistance(bus->route[i - 1]->coordinates, bus->route[i]->coordinates);
+
+				if (distances_.find({ bus->route[i - 1], bus->route[i] }) != distances_.end()) {
+					road_route_distance += distances_.at({ bus->route[i - 1], bus->route[i] });
+				}
+				else {
+					road_route_distance += distances_.at({ bus->route[i], bus->route[i - 1] });
+				}
+			}
+
+			double curvature = static_cast<double>(road_route_distance) / geo_route_length;
+
+			BusInfo bus_info(bus->route.size(), CountUniqueStops(requested_bus), road_route_distance, curvature);
 			return bus_info;
 		}
 		else {
@@ -75,4 +87,13 @@ namespace transport_catalogue {
 		return unique_stops.size();
 	}
 
+	void TransportCatalogue::AddDistances(const std::string_view stop_from, std::vector<std::pair<std::string, int>> distances) {
+		for (auto [stop_to, distance] : distances) {
+			distances_[std::pair{ stops_catalogue_.at(stop_from), stops_catalogue_.at(stop_to) }] = distance;
+		}
+	}
+
+	size_t TransportCatalogue::Hasher::operator()(const std::pair<Stop*, Stop*>& pair) const {
+		return (size_t)std::hash<const void*>{}(pair.first) * 17 + (size_t)std::hash<const void*>{}(pair.second) * 23;
+	}
 }

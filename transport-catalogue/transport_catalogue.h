@@ -22,13 +22,13 @@ namespace transport_catalogue {
 	struct Bus {
 		std::string route_name;
 		std::vector<Stop*> route;
-		double route_length;
 	};
 
 	struct BusInfo {
 		int stops_count;
 		int unique_stops_count;
-		double route_length;
+		int route_length = 0;
+		double curvature = 0.0;
 	};
 
 	class TransportCatalogue {
@@ -47,12 +47,21 @@ namespace transport_catalogue {
 
 		std::optional<BusInfo> GetBusInfo(std::string_view requested_bus) const;
 
+		void AddDistances(const std::string_view stop, std::vector<std::pair<std::string, int>> distances);
+
 	private:
 		std::deque<Stop> all_stops_;
 		std::unordered_map<std::string_view, Stop*> stops_catalogue_;
 		std::deque<Bus> all_buses_;
 		std::unordered_map<std::string_view, Bus*> buses_catalogue_;
 		std::unordered_map<std::string_view, std::set<std::string_view>> stops_to_buses_;
+
+		class Hasher {
+		public:
+			size_t operator()(const std::pair<Stop*, Stop*>& pair) const;
+		};
+
+		std::unordered_map<std::pair<Stop*, Stop*>, int, Hasher> distances_;
 
 		int CountUniqueStops(std::string_view bus) const;
 	};

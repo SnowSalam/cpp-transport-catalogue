@@ -78,6 +78,33 @@ namespace transport_catalogue {
                 return results;
             }
 
+            std::vector<std::pair<std::string, int>> ParseDistance(std::string_view str) {
+                auto comma = str.find(',');
+                comma = str.find(',', comma + 1);
+                std::vector<std::pair<std::string, int>> distances;
+                while (comma != std::string::npos) {
+
+                    auto num_begin = str.find_first_not_of(' ', comma + 1);
+                    auto num_end = str.find('m', num_begin);
+                    int distance = std::stoi(static_cast<std::string>(str.substr(num_begin, num_end - num_begin)));
+
+                    auto stop_begin = str.find("to", num_end + 1);
+                    stop_begin = str.find_first_not_of(' ', stop_begin + 2);
+                    comma = str.find(',', comma + 1);
+                    size_t stop_end = 0;
+                    if (comma == std::string::npos) {
+                        stop_end = str.find_last_not_of(' ') + 1;
+                    }
+                    else {
+                        stop_end = str.find_last_not_of(' ', comma);
+                    }
+
+                    std::string stop = static_cast<std::string>(str.substr(stop_begin, stop_end - stop_begin));
+                    distances.push_back({ stop, distance });
+                }
+                return distances;
+            }
+
             CommandDescription ParseCommandDescription(std::string_view line) {
                 auto colon_pos = line.find(':');
                 if (colon_pos == line.npos) {
@@ -120,6 +147,11 @@ namespace transport_catalogue {
                 else if (commands_[i].command == "Bus") {
                     std::vector<std::string_view> stops = details::ParseRoute(commands_[i].description);
                     catalogue.AddBus(commands_[i].id, stops);
+                }
+            }
+            for (auto command : commands_) {
+                if (command.command == "Stop") {
+                    catalogue.AddDistances(command.id, details::ParseDistance(command.description));
                 }
             }
         }
