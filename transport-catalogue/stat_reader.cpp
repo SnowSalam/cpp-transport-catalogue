@@ -18,7 +18,8 @@ void PrintBusInfo(transport_catalogue::TransportCatalogue& transport_catalogue, 
     else {
         output << bus_info->stops_count << " stops on route, "s
             << bus_info->unique_stops_count << " unique stops, "s << std::setprecision(6)
-            << bus_info->route_length << " route length"s << std::endl;
+            << bus_info->route_length << " route length, "s
+            << bus_info->curvature << " curvature"s << std::endl;
     }
 }
 
