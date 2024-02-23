@@ -1,6 +1,8 @@
 #pragma once
 
+#include <algorithm>
 #include <deque>
+#include <map>
 #include <optional>
 #include <set>
 #include <string>
@@ -11,25 +13,10 @@
 #include <vector>
 
 #include "geo.h"
+#include "json.h"
+#include "domain.h"
 
 namespace transport_catalogue {
-
-	struct Stop {
-		std::string name;
-		geo::Coordinates coordinates;
-	};
-
-	struct Bus {
-		std::string route_name;
-		std::vector<Stop*> route;
-	};
-
-	struct BusInfo {
-		int stops_count;
-		int unique_stops_count;
-		int route_length = 0;
-		double curvature = 0.0;
-	};
 
 	class TransportCatalogue {
 
@@ -39,29 +26,33 @@ namespace transport_catalogue {
 
 		const Stop* FindStop(std::string_view stop_name) const;
 
-		std::optional<std::vector<std::string_view>> GetStopInfo(std::string_view requested_stop) const;
+		std::optional<std::set<std::string_view>> GetStopInfo(std::string_view requested_stop) const;
 
-		void AddBus(const std::string_view id, const std::vector<std::string_view>& stops);
+		void AddBus(const std::string_view id, const std::vector<std::string_view>&& stops, bool is_roundtrip);
 
 		const Bus* FindBus(std::string_view route_name) const;
 
 		std::optional<BusInfo> GetBusInfo(std::string_view requested_bus) const;
 
-		void AddDistances(const std::string_view stop, std::vector<std::pair<std::string, int>> distances);
+		void AddDistances(const std::string_view stop_from, const std::pair<const std::string, json::Node> distances);
+
+		std::vector<const Bus*> GetBusCatalogue() const;
+
+		std::vector<const Stop*> GetStopCatalogue() const;
 
 	private:
-		std::deque<Stop> all_stops_;
-		std::unordered_map<std::string_view, Stop*> stops_catalogue_;
-		std::deque<Bus> all_buses_;
-		std::unordered_map<std::string_view, Bus*> buses_catalogue_;
-		std::unordered_map<std::string_view, std::set<std::string_view>> stops_to_buses_;
-
 		class Hasher {
 		public:
 			size_t operator()(const std::pair<Stop*, Stop*>& pair) const;
 		};
 
+		std::deque<Stop> all_stops_;
+		std::unordered_map<std::string_view, Stop*> stops_catalogue_;
+		std::deque<Bus> all_buses_;
+		std::unordered_map<std::string_view, Bus*> buses_catalogue_;
+		std::unordered_map<std::string_view, std::set<std::string_view>> stops_to_buses_;
 		std::unordered_map<std::pair<Stop*, Stop*>, int, Hasher> distances_;
+
 
 		int CountUniqueStops(std::string_view bus) const;
 	};

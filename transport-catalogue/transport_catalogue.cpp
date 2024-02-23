@@ -17,12 +17,12 @@ namespace transport_catalogue {
 		return nullptr;
 	}
 
-	std::optional<std::vector<std::string_view>> TransportCatalogue::GetStopInfo(std::string_view requested_stop) const {
+	std::optional<std::set<std::string_view>> TransportCatalogue::GetStopInfo(std::string_view requested_stop) const {
 		if (FindStop(requested_stop) != nullptr) {
-			std::vector<std::string_view> buses;
+			std::set<std::string_view> buses;
 			if (stops_to_buses_.find(requested_stop) != stops_to_buses_.end()) {
 				for (std::string_view bus : stops_to_buses_.at(requested_stop)) {
-					buses.push_back(bus);
+					buses.insert(bus);
 				}
 			}
 			return buses;
@@ -32,14 +32,14 @@ namespace transport_catalogue {
 		}
 	}
 
-	void TransportCatalogue::AddBus(const std::string_view id, const std::vector<std::string_view>& stops) {
+	void TransportCatalogue::AddBus(const std::string_view id, const std::vector<std::string_view>&& stops, bool is_roundtrip) {
 		std::vector<Stop*> route_stops;
 		for (const std::string_view& stop : stops) {
 			if (stops_catalogue_.find(stop) != stops_catalogue_.end()) {
 				route_stops.push_back(stops_catalogue_[stop]);
 			}
 		}
-		all_buses_.push_back({ std::string(id), route_stops });
+		all_buses_.push_back({ std::string(id), route_stops, is_roundtrip });
 		buses_catalogue_[all_buses_.back().route_name] = &all_buses_.back();
 		for (const std::string_view& stop : stops) {
 			stops_to_buses_[stop].insert(all_buses_.back().route_name);
@@ -71,7 +71,7 @@ namespace transport_catalogue {
 
 			double curvature = static_cast<double>(road_route_distance) / geo_route_length;
 
-			BusInfo bus_info(bus->route.size(), CountUniqueStops(requested_bus), road_route_distance, curvature);
+			BusInfo bus_info(bus->route.size(), CountUniqueStops(requested_bus), road_route_distance, curvature, bus->is_roundtrip);
 			return bus_info;
 		}
 		else {
@@ -87,10 +87,41 @@ namespace transport_catalogue {
 		return unique_stops.size();
 	}
 
-	void TransportCatalogue::AddDistances(const std::string_view stop_from, std::vector<std::pair<std::string, int>> distances) {
-		for (auto [stop_to, distance] : distances) {
-			distances_[std::pair{ stops_catalogue_.at(stop_from), stops_catalogue_.at(stop_to) }] = distance;
+	void TransportCatalogue::AddDistances(const std::string_view stop_from, const std::pair<const std::string, json::Node> distances) {
+			distances_[std::pair{ stops_catalogue_.at(stop_from), stops_catalogue_.at(distances.first) }] = distances.second.AsInt();
+	}
+
+	std::vector<const Bus*> TransportCatalogue::GetBusCatalogue() const {
+		std::vector<const Bus*> buses;
+		for (const auto& pair : buses_catalogue_) {
+			buses.push_back(pair.second);
 		}
+		std::sort(buses.begin(), buses.end(),
+			[](const Bus* lhs, const Bus* rhs) {
+				return lhs->route_name < rhs->route_name;
+			});
+		return buses;
+	}
+
+	bool CompareStops(const Stop* s1, const Stop* s2) {
+		return s1->name == s2->name;
+	}
+
+	std::vector<const Stop*> TransportCatalogue::GetStopCatalogue() const {
+		std::vector<const Stop*> stops;
+		for (const Bus& bus : all_buses_) {
+			if (!bus.route.empty()) {
+				for (const Stop* stop : bus.route) {
+					stops.push_back(stop);
+				}
+			}
+		}
+		std::sort(stops.begin(), stops.end(),
+			[](const Stop* lhs, const Stop* rhs) {
+				return lhs->name < rhs->name;
+			});
+		stops.erase(std::unique(stops.begin(), stops.end(), CompareStops), stops.end());
+		return stops;
 	}
 
 	size_t TransportCatalogue::Hasher::operator()(const std::pair<Stop*, Stop*>& pair) const {
