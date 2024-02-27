@@ -65,66 +65,79 @@ void JsonReader::FillCatalogue() {
 
 }
 
-void JsonReader::PrintRequests(std::ostream& output) {
+json::Document FormResponce(const json::Array* stat_requests, const transport_catalogue::TransportCatalogue* catalogue, const json::Document* doc) {
     using namespace std::literals;
 
-    const json::Array* stat_requests = &doc_.GetRoot().AsMap().at("stat_requests"s).AsArray();
     size_t requests_num = stat_requests->size();
     unsigned int request_counter = 0;
 
-    output << "[\n"s;
+    json::Array root;
+    root.reserve(requests_num);
+
     for (const json::Node& node : *stat_requests) {
+        json::Dict one_responce;
         int id = node.AsMap().at("id"s).AsInt();
 
         if (node.AsMap().at("type"s).AsString() == "Bus"s) {
-            if (std::optional<transport_catalogue::BusInfo> bus = catalogue_.GetBusInfo(node.AsMap().at("name"s).AsString()); bus != std::nullopt) {
+            if (std::optional<transport_catalogue::BusInfo> bus = catalogue->GetBusInfo(node.AsMap().at("name"s).AsString()); bus != std::nullopt) {
 
-                output << "    {\n\t\"curvature\": " << bus->curvature << ",\n";
-                output << "\t\"request_id\": " << id << ",\n";
-                output << "\t\"route_length\": " << bus->route_length << ",\n";
-                output << "\t\"stop_count\": " << bus->stops_count << ",\n";
-                output << "\t\"unique_stop_count\": " << bus->unique_stops_count << "\n    }";
+                one_responce["curvature"s] = json::Node(bus->curvature);
+                one_responce["request_id"s] = json::Node(id);
+                one_responce["route_length"s] = json::Node(bus->route_length);
+                one_responce["stop_count"s] = json::Node(bus->stops_count);
+                one_responce["unique_stop_count"s] = json::Node(bus->unique_stops_count);
             }
             else {
-                output << "    {\n\t\"request_id\": " << id << ",\n\t\"error_message\": \"not found\"\n    }";
+                one_responce["request_id"s] = json::Node(id);
+                one_responce["error_message"s] = json::Node("not found"s);
             }
         }
         else {
             if (node.AsMap().at("type"s).AsString() == "Stop"s) {
-                if (std::optional<std::set<std::string_view>> buses_of_stop = catalogue_.GetStopInfo(node.AsMap().at("name"s).AsString()); buses_of_stop != std::nullopt) {
+                if (std::optional<std::set<std::string_view>> buses_of_stop = catalogue->GetStopInfo(node.AsMap().at("name"s).AsString()); buses_of_stop != std::nullopt) {
                     size_t buses_count = buses_of_stop->size();
-                    unsigned int counter = 0;
 
-                    output << "    {\n\t\"buses\": [\n\t";
+                    json::Array buses;
+
                     for (const std::string_view& bus : *buses_of_stop) {
-                        output << "\"" << bus << "\"";
-                        ++counter;
-                        if (counter < buses_count) output << ",";
-                        output << "\n\t";
+                        buses.emplace_back(json::Node(static_cast<std::string>(bus)));
                     }
-                    output << "],\n\t\"request_id\": " << id << "\n    }";
 
-
+                    one_responce["buses"s] = json::Node(buses);
+                    one_responce["request_id"s] = json::Node(id);
                 }
                 else {
-                    output << "    {\n\t\"request_id\": " << id << ",\n\t\"error_message\": \"not found\"\n    }";
-
+                    one_responce["request_id"s] = json::Node(id);
+                    one_responce["error_message"s] = json::Node("not found"s);
                 }
             }
             else {
                 if (node.AsMap().at("type"s).AsString() == "Map"s) {
-                    output << "    {\n\t\"map\": \"";
-                    CreateMap(&doc_, &catalogue_, output);
-                    output << "\",\n\t\"request_id\": " << id << "\n    }";
 
+                    std::ostringstream outstream;
+
+                    MapRenderer map_renderer(doc, catalogue);
+                    map_renderer.CreateMap().RenderMap(outstream);
+
+                    one_responce["map"s] = json::Node(outstream.str());
+                    one_responce["request_id"s] = json::Node(id);
                 }
                 else {
                     throw std::invalid_argument("Invalid request type"s);
                 }
             }
         }
-        ++request_counter;
-        if (request_counter < requests_num) output << ",\n";
+        root.push_back(std::move(json::Node(std::move(one_responce))));
     }
-    output << "\n]" << std::endl;
+    json::Document responce_doc(std::move(json::Node(std::move(root))));
+    return responce_doc;
+}
+
+void JsonReader::PrintRequests(std::ostream& output) {
+    using namespace std::literals;
+
+    const json::Array* stat_requests = &doc_.GetRoot().AsMap().at("stat_requests"s).AsArray();
+    json::Document responce = FormResponce(stat_requests, &catalogue_, &doc_);
+    json::Print(responce, output);
+
 }
