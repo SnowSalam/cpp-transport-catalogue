@@ -10,7 +10,7 @@ namespace svg {
         // ƒелегируем вывод тега своим подклассам
         RenderObject(context);
 
-        context.out << "\\n";
+        context.out << "\n";
         //context.out << std::endl;
     }
 
@@ -28,8 +28,8 @@ namespace svg {
 
     void Circle::RenderObject(const RenderContext& context) const {
         auto& out = context.out;
-        out << "<circle cx=\\\""sv << center_.x << "\\\" cy=\\\""sv << center_.y << "\\\" "sv;
-        out << "r=\\\""sv << radius_ << "\\\""sv;
+        out << "<circle cx=\""sv << center_.x << "\" cy=\""sv << center_.y << "\" "sv;
+        out << "r=\""sv << radius_ << "\""sv;
         // ¬ыводим атрибуты, унаследованные от PathProps
         RenderAttrs(context.out);
         out << "/>"sv;
@@ -45,7 +45,7 @@ namespace svg {
 
     void Polyline::RenderObject(const RenderContext& context) const {
         auto& out = context.out;
-        out << R"(<polyline points=\")";
+        out << R"(<polyline points=")";
         bool is_first = true;
         for (Point point : vertexes_) {
             if (is_first) {
@@ -56,7 +56,7 @@ namespace svg {
                 out << " " << point.x << "," << point.y;
             }
         }
-        out << "\\\"";
+        out << "\"";
         RenderAttrs(context.out);
         out << "/>"s;
     }
@@ -97,14 +97,14 @@ namespace svg {
         auto& out = context.out;
         out << R"(<text)";
         RenderAttrs(context.out);
-        out << R"( x=\")" << position_.x << R"(\" y=\")" << position_.y << R"(\" dx=\")"
-            << offset_.x << R"(\" dy=\")" << offset_.y << R"(\" font-size=\")" << font_size_ << "\\\"";
+        out << R"( x=")" << position_.x << R"(" y=")" << position_.y << R"(" dx=")"
+            << offset_.x << R"(" dy=")" << offset_.y << R"(" font-size=")" << font_size_ << "\"";
         if (!font_family_.empty()) {
-            out << R"( font-family=\")" << font_family_ << "\\\"";
+            out << R"( font-family=")" << font_family_ << "\"";
         }
 
         if (!font_weight_.empty()) {
-            out << R"( font-weight=\")" << font_weight_ << "\\\"";
+            out << R"( font-weight=")" << font_weight_ << "\"";
         }
 
         out << ">";
@@ -139,8 +139,8 @@ namespace svg {
     // ------ ObjectContainer -------------
 
     void ObjectContainer::Render(std::ostream& out) const {
-        out << R"(<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n)";
-        out << R"(<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n)";
+        out << "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n";
+        out << "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
         RenderContext context(out);
         for (auto& object : objects_) {
             out << "  ";

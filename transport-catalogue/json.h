@@ -3,192 +3,145 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <vector>
 #include <variant>
+#include <vector>
 
 namespace json {
-    using namespace std::literals;
 
     class Node;
-    // —охраните объ€влени€ Dict и Array без изменени€
     using Dict = std::map<std::string, Node>;
     using Array = std::vector<Node>;
-    using Value = std::variant<std::nullptr_t, bool, int, double, std::string, Array, Dict>;
 
-    // Ёта ошибка должна выбрасыватьс€ при ошибках парсинга JSON
     class ParsingError : public std::runtime_error {
     public:
         using runtime_error::runtime_error;
     };
 
-    std::ostream& operator<<(std::ostream& os, const Node& nod);
-
-    class Node {
+    class Node final
+        : private std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
     public:
-        Node() = default;
-        Node(std::nullptr_t val) : value_(val) {}
-        Node(int val) : value_(val) {}
-        Node(double val) : value_(val) {}
-        Node(bool val) : value_(val) {}
-        Node(std::string val) : value_(std::move(val)) {}
-        Node(Array val) : value_(std::move(val)) {}
-        Node(Dict val) : value_(std::move(val)) {}
+        using variant::variant;
+        using Value = variant;
 
+        Node(Value value) : variant(std::move(value)) {}
 
-        bool IsInt() const;
-        bool IsDouble() const;
-        bool IsPureDouble() const;
-        bool IsBool() const;
-        bool IsString() const;
-        bool IsNull() const;
-        bool IsArray() const;
-        bool IsMap() const;
-
-        ////////////////////// ASs
-
+        bool IsInt() const {
+            return std::holds_alternative<int>(*this);
+        }
         int AsInt() const {
+            using namespace std::literals;
             if (!IsInt()) {
-                throw std::logic_error("non-valid type");
+                throw std::logic_error("Not an int"s);
             }
-            return *std::get_if<int>(&value_);
+            return std::get<int>(*this);
+        }
+
+        bool IsPureDouble() const {
+            return std::holds_alternative<double>(*this);
+        }
+        bool IsDouble() const {
+            return IsInt() || IsPureDouble();
         }
         double AsDouble() const {
+            using namespace std::literals;
             if (!IsDouble()) {
-                throw std::logic_error("non-valid type");
+                throw std::logic_error("Not a double"s);
             }
-            if (std::get_if<double>(&value_)) {
-                return*(std::get_if<double>(&value_));
-            }
-            return static_cast<double>(*std::get_if<int>(&value_));
+            return IsPureDouble() ? std::get<double>(*this) : AsInt();
         }
-        double AsPureDouble() const {
-            if (!IsPureDouble()) {
-                throw std::logic_error("non-valid type");
-            }
-            return *std::get_if<double>(&value_);
+
+        bool IsBool() const {
+            return std::holds_alternative<bool>(*this);
         }
         bool AsBool() const {
+            using namespace std::literals;
             if (!IsBool()) {
-                throw std::logic_error("non-valid type");
+                throw std::logic_error("Not a bool"s);
             }
-            return *std::get_if<bool>(&value_);
+
+            return std::get<bool>(*this);
         }
-        const std::string& AsString() const {
-            if (!IsString()) {
-                throw std::logic_error("non-valid type");
-            }
-            return *std::get_if<std::string>(&value_);
+
+        bool IsNull() const {
+            return std::holds_alternative<std::nullptr_t>(*this);
+        }
+
+        bool IsArray() const {
+            return std::holds_alternative<Array>(*this);
         }
         const Array& AsArray() const {
+            using namespace std::literals;
             if (!IsArray()) {
-                throw std::logic_error("non-valid type");
+                throw std::logic_error("Not an array"s);
             }
-            return *std::get_if<Array>(&value_);
+
+            return std::get<Array>(*this);
         }
-        const Dict& AsMap() const {
-            if (!IsMap()) {
-                throw std::logic_error("non-valid type");
+
+        bool IsString() const {
+            return std::holds_alternative<std::string>(*this);
+        }
+        const std::string& AsString() const {
+            using namespace std::literals;
+            if (!IsString()) {
+                throw std::logic_error("Not a string"s);
             }
-            return *std::get_if<Dict>(&value_);
+
+            return std::get<std::string>(*this);
+        }
+
+        bool IsDict() const {
+            return std::holds_alternative<Dict>(*this);
+        }
+        const Dict& AsDict() const {
+            using namespace std::literals;
+            if (!IsDict()) {
+                throw std::logic_error("Not a dict"s);
+            }
+
+            return std::get<Dict>(*this);
+        }
+
+        bool operator==(const Node& rhs) const {
+            return GetValue() == rhs.GetValue();
         }
 
         const Value& GetValue() const {
-            return value_;
+            return *this;
         }
-
-        bool operator==(const Node& other) const {
-            return other.value_ == this->value_;
+        Value& GetValue() {
+            return *this;
         }
-        bool operator!=(const Node& other) const {
-            return !(*this == other);
-        }
-
-    private:
-        Value value_;
     };
+
+    inline bool operator!=(const Node& lhs, const Node& rhs) {
+        return !(lhs == rhs);
+    }
 
     class Document {
     public:
-        explicit Document(Node root);
-
-        const Node& GetRoot() const;
-
-        bool operator==(const Document& other) {
-            return this->GetRoot() == other.GetRoot();
+        explicit Document(Node root)
+            : root_(std::move(root)) {
         }
-        bool operator!=(const Document& other) {
-            return !(*this == other);
+
+        const Node& GetRoot() const {
+            return root_;
         }
 
     private:
         Node root_;
     };
 
+    inline bool operator==(const Document& lhs, const Document& rhs) {
+        return lhs.GetRoot() == rhs.GetRoot();
+    }
+
+    inline bool operator!=(const Document& lhs, const Document& rhs) {
+        return !(lhs == rhs);
+    }
+
     Document Load(std::istream& input);
 
     void Print(const Document& doc, std::ostream& output);
-
-    struct NodeVisiter {
-        std::ostream& out;
-
-        void operator()(std::nullptr_t) {
-            out << "null";
-        }
-        void operator()(bool v) {
-            out << std::boolalpha << v;
-        }
-        void operator()(double v) {
-            out << v;
-        }
-        void operator()(int v) {
-            out << v;
-        }
-        void operator()(const std::string& v) {
-            out << "\""sv;
-            for (char c : v) {
-                switch (c) {
-                case'\\':
-                    out << "\\\\"sv;
-                    break;
-                case'"':
-                    out << "\\\""sv;
-                    break;
-                case'\n':
-                    out << "\\n"sv;
-                    break;
-                case'\r':
-                    out << "\\r"sv;
-                    break;
-                case'\t':
-                    out << "\\t"sv;
-                    break;
-                default: out << c;
-                    break;
-                }
-            }
-            out << "\""sv;
-        }
-        void operator()(const Array& v) {
-            out << "["sv;
-            for (size_t i = 0; i < v.size(); ++i) {
-                out << v[i];
-                if (i + 1 == v.size()) { break; }
-                out << ",";
-            }
-            out << "]"sv;
-        }
-        void operator()(const Dict& v) {
-
-            size_t lim = v.size();
-            out << "{"sv;
-            for (const auto& i : v) {
-                out << '"' << i.first << "\":" << i.second;
-                --lim; if (lim == 0)break;
-                out << ",";
-
-            }
-            out << "}"sv;
-        }
-    };
 
 }  // namespace json

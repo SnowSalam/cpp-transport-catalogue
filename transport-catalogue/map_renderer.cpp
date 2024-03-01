@@ -61,7 +61,7 @@ svg::Color GetColor(const json::Array* colors) {
             uint8_t r = static_cast<uint8_t>(colors->at(0).AsInt()),
                 g = static_cast<uint8_t>(colors->at(1).AsInt()),
                 b = static_cast<uint8_t>(colors->at(2).AsInt());
-            double op = colors->at(3).AsPureDouble();
+            double op = colors->at(3).AsDouble();
             return svg::Rgba(r, g, b, op);
         }
     }

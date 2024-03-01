@@ -119,7 +119,7 @@ public:
     MapRenderer() = default;
     MapRenderer(const json::Document* doc, const transport_catalogue::TransportCatalogue* catalogue)
         : doc_(doc), catalogue_(catalogue) {
-        render_settings_ = SetRenderSettings(doc_->GetRoot().AsMap().at("render_settings").AsMap());
+        render_settings_ = SetRenderSettings(doc_->GetRoot().AsDict().at("render_settings").AsDict());
     }
 
     MapRenderer& CreateMap();

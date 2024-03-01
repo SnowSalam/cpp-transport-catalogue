@@ -39,4 +39,4 @@ private:
     void FillCatalogue();
 
     void PrintRequests(std::ostream& output);
-    };
+};
