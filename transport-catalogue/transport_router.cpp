@@ -1,6 +1,8 @@
 #include "transport_router.h"
 #include "graph.h"
 
+const double SPEED_COEF = 1000.0 / 60; //from km/hour to m/min
+
 void TransportRouter::BuildGraph(const transport_catalogue::TransportCatalogue& catalogue) {
     auto sorted_stops = catalogue.GetSortedStops();
     auto sorted_buses = catalogue.GetSortedBuses();
@@ -39,7 +41,7 @@ void TransportRouter::BuildGraph(const transport_catalogue::TransportCatalogue& 
                                                     j - i,
                                                     stop_ids_.at(stop_from->name) + 1,
                                                     stop_ids_.at(stop_to->name),
-                                                    dist_sum / (bus_velocity_ * (1000. / 60.))//km/hour to m/min
+                                                    dist_sum / (bus_velocity_ * SPEED_COEF)
                             });
                     }
                 }
@@ -60,7 +62,7 @@ void TransportRouter::BuildGraph(const transport_catalogue::TransportCatalogue& 
                                                     j - i,
                                                     stop_ids_.at(stop_from->name) + 1,
                                                     stop_ids_.at(stop_to->name),
-                                                    dist_sum / (bus_velocity_ * (1000. / 60.)) //km/hour to m/min
+                                                    dist_sum / (bus_velocity_ * SPEED_COEF)
                             });
                     }
                 }
@@ -79,7 +81,7 @@ void TransportRouter::BuildGraph(const transport_catalogue::TransportCatalogue& 
                                                     j - i,
                                                     stop_ids_.at(stop_from->name) + 1,
                                                     stop_ids_.at(stop_to->name),
-                                                    dist_sum / (bus_velocity_ * (1000. / 60.)) //km/hour to m/min
+                                                    dist_sum / (bus_velocity_ * SPEED_COEF)
                             });
                     }
                 }
