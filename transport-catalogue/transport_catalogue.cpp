@@ -3,18 +3,29 @@
 namespace transport_catalogue {
 
 	void TransportCatalogue::AddStop(const std::string_view stop_name, geo::Coordinates coordinates) {
-		Stop stop{ std::string(stop_name), coordinates };
-		all_stops_.push_back(std::move(stop));
+		all_stops_.emplace_back(std::string(stop_name), coordinates);
 		Stop* current_stop = &all_stops_.back();
 		stops_catalogue_[current_stop->name] = current_stop;
 		stops_to_buses_[current_stop->name];
 	}
 
-	const Stop* TransportCatalogue::FindStop(std::string_view stop_name) const {
+	Stop* TransportCatalogue::FindStop(std::string_view stop_name) const {
 		if (stops_catalogue_.find(stop_name) != stops_catalogue_.end()) {
 			return stops_catalogue_.at(stop_name);
 		}
 		return nullptr;
+	}
+
+	int TransportCatalogue::GetDistance(const std::string_view stop_from, const std::string_view stop_to) const {
+		Stop* from = FindStop(stop_from);
+		Stop* to = FindStop(stop_to);
+		if (auto it = distances_.find({ from, to }); it != distances_.end()) {
+			return it->second;
+		}
+		else {
+			if (stop_from == stop_to) return 0;
+			return distances_.at({ to, from });
+		}
 	}
 
 	std::optional<std::set<std::string_view>> TransportCatalogue::GetStopInfo(std::string_view requested_stop) const {
@@ -39,7 +50,7 @@ namespace transport_catalogue {
 				route_stops.push_back(stops_catalogue_[stop]);
 			}
 		}
-		all_buses_.push_back({ std::string(id), route_stops, is_roundtrip });
+		all_buses_.emplace_back(std::string(id), std::move(route_stops), is_roundtrip);
 		buses_catalogue_[all_buses_.back().route_name] = &all_buses_.back();
 		for (const std::string_view& stop : stops) {
 			stops_to_buses_[stop].insert(all_buses_.back().route_name);
@@ -126,5 +137,13 @@ namespace transport_catalogue {
 
 	size_t TransportCatalogue::Hasher::operator()(const std::pair<Stop*, Stop*>& pair) const {
 		return (size_t)std::hash<const void*>{}(pair.first) * 17 + (size_t)std::hash<const void*>{}(pair.second) * 23;
+	}
+
+	std::map<std::string_view, Stop*> TransportCatalogue::GetSortedStops() const {
+		return { stops_catalogue_.begin(), stops_catalogue_.end() };
+	}
+
+	std::map<std::string_view, Bus*> TransportCatalogue::GetSortedBuses() const {
+		return { buses_catalogue_.begin(), buses_catalogue_.end() };
 	}
 }

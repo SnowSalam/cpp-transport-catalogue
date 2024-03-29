@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace json {
-    //just took the best implementation
+
     class Builder {
     private:
         class BaseContext;

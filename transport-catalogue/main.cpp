@@ -11,6 +11,7 @@ using namespace std;
 
 int main() {
     //ifstream input("in.txt"s);
+
     JsonReader json_doc(std::cin);
 
     json_doc.PrintToStream(std::cout);
