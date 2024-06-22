@@ -1,3 +1,5 @@
+﻿#pragma once
+
 #include "transport_router.h"
 #include "graph.h"
 

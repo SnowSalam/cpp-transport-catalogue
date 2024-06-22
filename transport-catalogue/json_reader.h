@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <algorithm>
 #include <stdexcept>
@@ -30,13 +30,13 @@ private:
     transport_catalogue::TransportCatalogue catalogue_;
     TransportRouter router_;
 
-    // сортировка запросов на добавление в каталог
+    // sorting requests for adding to the catalog
     void SortInputRequests(std::vector<json::Node>& buses, std::vector<json::Node>& stops);
 
-    // добавление остановок и дистанций
+    // adding stops and distances
     void AddStops(std::vector<json::Node>* stops);
 
-    // добавление автобусов
+    // adding buses
     void AddBuses(std::vector<json::Node>* buses);
 
     void FillCatalogue();

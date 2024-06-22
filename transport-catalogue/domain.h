@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include <string>
 #include <vector>
@@ -6,8 +6,8 @@
 namespace geo {
     struct Coordinates {
 
-        double lat; // Широта
-        double lng; // Долгота
+        double lat; // Latitude
+        double lng; // Longitude
     };
 }
 

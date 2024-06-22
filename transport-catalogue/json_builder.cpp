@@ -1,4 +1,4 @@
-#include "json_builder.h"
+﻿#include "json_builder.h"
 #include <exception>
 #include <variant>
 #include <utility>
@@ -75,7 +75,6 @@ namespace json {
         return nodes_stack_.back()->GetValue();
     }
 
-    // Tell about this trick
     const Node::Value& Builder::GetCurrentValue() const {
         return const_cast<Builder*>(this)->GetCurrentValue();
     }
@@ -89,7 +88,6 @@ namespace json {
     void Builder::AddObject(Node::Value value, bool one_shot) {
         Node::Value& host_value = GetCurrentValue();
         if (std::holds_alternative<Array>(host_value)) {
-            // Tell about emplace_back
             Node& node
                 = std::get<Array>(host_value).emplace_back(std::move(value));
             if (!one_shot) {

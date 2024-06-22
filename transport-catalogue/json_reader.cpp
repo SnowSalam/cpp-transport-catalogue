@@ -1,9 +1,9 @@
-#include "json_reader.h"
+пїњ#include "json_reader.h"
 #include "json_builder.h"
 
 using namespace std::literals;
 
-// сортировка запросов на добавление в каталог
+// sorting requests for adding to the catalog
 void JsonReader::SortInputRequests(std::vector<json::Node>& buses, std::vector<json::Node>& stops) {
 
     for (const json::Node& node : doc_.GetRoot().AsDict().at("base_requests"s).AsArray()) {
@@ -16,15 +16,15 @@ void JsonReader::SortInputRequests(std::vector<json::Node>& buses, std::vector<j
     }
 }
 
-// добавление остановок и дистанций
+// adding stops and distances
 void JsonReader::AddStops(std::vector<json::Node>* stops) {
 
-    // добавление остановок
+    // adding stops
     for (json::Node& node : *stops) {
         geo::Coordinates coordinates{ node.AsDict().at("latitude"s).AsDouble(), node.AsDict().at("longitude"s).AsDouble() };
         catalogue_.AddStop(node.AsDict().at("name"s).AsString(), coordinates);
     }
-    // добавление дистанций
+    // adding distances
     for (json::Node& node : *stops) {
         std::string_view stop_from = node.AsDict().at("name"s).AsString();
         for (const std::pair<const std::string, json::Node>& stop_to : node.AsDict().at("road_distances"s).AsDict()) {
@@ -33,7 +33,7 @@ void JsonReader::AddStops(std::vector<json::Node>* stops) {
     }
 }
 
-// добавление автобусов
+// adding buses
 void JsonReader::AddBuses(std::vector<json::Node>* buses) {
 
     for (json::Node& node : *buses) {
@@ -79,7 +79,7 @@ void MakeErrorResponse(json::Builder& builder, int id) {
 
 json::Document JsonReader::FormResponce(const json::Array* stat_requests) {
     router_.BuildGraph(catalogue_);
-    json::Builder builder{}; // выдаЄт Node
+    json::Builder builder{}; // gives Node
 
     builder.StartArray();
 

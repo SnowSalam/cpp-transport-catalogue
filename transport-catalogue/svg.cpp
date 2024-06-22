@@ -1,4 +1,4 @@
-#include "svg.h"
+п»ї#include "svg.h"
 
 namespace svg {
 
@@ -7,7 +7,7 @@ namespace svg {
     void Object::Render(const RenderContext& context) const {
         context.RenderIndent();
 
-        // Делегируем вывод тега своим подклассам
+        // Р”РµР»РµРіРёСЂСѓРµРј РІС‹РІРѕРґ С‚РµРіР° СЃРІРѕРёРј РїРѕРґРєР»Р°СЃСЃР°Рј
         RenderObject(context);
 
         context.out << "\n";
@@ -30,7 +30,7 @@ namespace svg {
         auto& out = context.out;
         out << "<circle cx=\""sv << center_.x << "\" cy=\""sv << center_.y << "\" "sv;
         out << "r=\""sv << radius_ << "\""sv;
-        // Выводим атрибуты, унаследованные от PathProps
+        // Р’С‹РІРѕРґРёРј Р°С‚СЂРёР±СѓС‚С‹, СѓРЅР°СЃР»РµРґРѕРІР°РЅРЅС‹Рµ РѕС‚ PathProps
         RenderAttrs(context.out);
         out << "/>"sv;
 
